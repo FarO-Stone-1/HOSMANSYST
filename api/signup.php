@@ -7,7 +7,7 @@ include_once 'auth_check.php';
 checkAccess(['Admin']);
 
 $data = json_decode(file_get_contents("php://input"));
-
+if (!$data) $data = (object) $_POST;
 if (!empty($data->username) && !empty($data->password) && !empty($data->role)) {
     // Hash the password before saving
     $hashed_password = password_hash($data->password, PASSWORD_DEFAULT);
