@@ -1,29 +1,54 @@
 <?php
-header("Content-Type: application/json");
+// api/add_patient.php
+
+header("Access-Control-Allow-Origin: *");
+header("Content-Type: application/json; charset=UTF-8");
+header("Access-Control-Allow-Methods: POST");
+header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
+
 include_once '../config/db.php';
 include_once 'auth_check.php';
-checkAccess([ 'Doctor', 'Nurse', 'Admin' ]); // Only allow Doctors, Nurses, and Admins to add patients
+
+// 3️⃣ FIX: Added 'Receptionist' to the access check array
+checkAccess(['Doctor', 'Nurse', 'Admin', 'Receptionist']);
 
 $data = json_decode(file_get_contents("php://input"));
 
-// Strict Validation
-if (empty($data->name)) {
-    echo json_encode(["message" => "Error: Name is required"]);
-} elseif (empty($data->dob)) {
-    echo json_encode(["message" => "Error: Date of Birth is required"]);
-} elseif (empty($data->gender)) {
-    echo json_encode(["message" => "Error: Gender is required"]);
-} elseif (empty($data->age)) {
-    echo json_encode(["message" => "Error: Age is required"]);
+if (!empty($data->name) && !empty($data->dob) && !empty($data->gender)) {
+    try {
+        $query = "INSERT INTO patients (
+                    name, dob, gender, age, phone, address, 
+                    blood_group, allergies, emergency_contact_name, emergency_contact_phone, created_at
+                  ) VALUES (
+                    :name, :dob, :gender, :age, :phone, :address, 
+                    :blood_group, :allergies, :emergency_contact_name, :emergency_contact_phone, NOW()
+                  )";
+        
+        $stmt = $db->prepare($query);
+
+        $stmt->bindParam(":name", $data->name);
+        $stmt->bindParam(":dob", $data->dob);
+        $stmt->bindParam(":gender", $data->gender);
+        $stmt->bindParam(":age", $data->age);
+        $stmt->bindParam(":phone", $data->phone);
+        $stmt->bindParam(":address", $data->address);
+        $stmt->bindParam(":blood_group", $data->blood_group);
+        $stmt->bindParam(":allergies", $data->allergies);
+        $stmt->bindParam(":emergency_contact_name", $data->emergency_contact_name);
+        $stmt->bindParam(":emergency_contact_phone", $data->emergency_contact_phone);
+
+        if ($stmt->execute()) {
+            http_response_code(201);
+            echo json_encode(["status" => "success", "message" => "Patient registered successfully."]);
+        } else {
+            http_response_code(500);
+            echo json_encode(["status" => "error", "message" => "Unable to save patient."]);
+        }
+    } catch (PDOException $e) {
+        http_response_code(500);
+        echo json_encode(["status" => "error", "message" => "Database failure: " . $e->getMessage()]);
+    }
 } else {
-    $query = "INSERT INTO patients (full_name, dob, gender, age) VALUES (:name, :dob, :gender, :age)";
-    $stmt = $conn->prepare($query);
-    $stmt->execute([
-        ':name'   => $data->name,
-        ':dob'    => $data->dob,
-        ':gender' => $data->gender,
-        ':age'    => $data->age
-    ]);
-    echo json_encode(["message" => "Patient successfully registered"]);
+    http_response_code(400);
+    echo json_encode(["status" => "error", "message" => "Incomplete data structure parameters missing."]);
 }
-?>

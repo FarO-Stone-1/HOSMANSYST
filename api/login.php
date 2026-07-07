@@ -15,6 +15,7 @@ if ($user && password_verify($data->password, $user['password_hash'])) {
     // Session is created here
     $_SESSION['user_id'] = $user['user_id'];
     $_SESSION['role'] = $user['role'];
+    $_SESSION['username'] = $user['username'];
     
     echo json_encode(["message" => "Login successful", "role" => $user['role']]);
 } else {
