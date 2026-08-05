@@ -6,7 +6,7 @@ header("Access-Control-Allow-Methods: GET");
 include_once '../config/db.php';
 include_once 'auth_check.php';
 
-checkAccess(['Admin', 'Doctor', 'Nurse', 'Receptionist']);
+checkAccess(['Admin', 'Doctor', 'Nurse', 'Receptionist', 'Patient']);
 
 try {
     $query = "SELECT a.*, 
